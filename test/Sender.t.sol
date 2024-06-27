@@ -22,13 +22,15 @@ contract TestSender is Test{
         tokenContract.mint(1000 ether);
         tokenContract.approve(
             address(senderContract),
+            // represents infinite 
             0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
         );
         vm.stopPrank();
     }
     
     function testSender() public {
-        bytes32 hashedMessage = senderContract.getHash(userAddress, 10 ether, recipientAddress, address(tokenContract));
+        uint nonce = 11;
+        bytes32 hashedMessage = senderContract.getHash(userAddress, 10 ether, recipientAddress, address(tokenContract),nonce);
         bytes32 messageHashSigned = MessageHashUtils.toEthSignedMessageHash(hashedMessage);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             privKeyOfUserAddress,
@@ -37,7 +39,7 @@ contract TestSender is Test{
 
         bytes memory signedSignature = abi.encodePacked(r, s, v);
         vm.prank(relayerAddress);
-        senderContract.transfer(userAddress, 10 ether, recipientAddress, address(tokenContract), signedSignature);
+        senderContract.transfer(userAddress, 10 ether, recipientAddress, address(tokenContract), nonce,signedSignature);
         uint userBalance = tokenContract.balanceOf(userAddress);
         uint recipientBalance = tokenContract.balanceOf(recipientAddress);
         assertLt(userBalance, 10000 ether);

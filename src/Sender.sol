@@ -13,19 +13,20 @@ contract Token is ERC20{
         _mint(msg.sender,amount);
     }
 }
-
 contract TokenSender{
     using ECDSA for bytes32;
 
+    mapping (bytes32 => bool) executed;
     function getHash(
         address sender,
         uint256 amount,
         address recepient,
-        address tokenContract
+        address tokenContract,
+        uint nonce
     ) public pure returns(bytes32){
         return 
         keccak256(
-            abi.encodePacked(sender,amount,recepient,tokenContract)
+            abi.encodePacked(sender,amount,recepient,tokenContract,nonce)
         );
     }
 
@@ -34,12 +35,14 @@ contract TokenSender{
         uint256 amount,
         address recepient,
         address tokenContract,
+        uint nonce,
         bytes memory signature
     )public {
-        bytes32 messageHash = getHash(sender,amount,recepient,tokenContract);
+        bytes32 messageHash = getHash(sender,amount,recepient,tokenContract,nonce);
         bytes32 signedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
         address signer = signedMessageHash.recover(signature);
         require(signer == sender, "Sender should sign");
+        executed[signedMessageHash] = true;
          bool sent = ERC20(tokenContract).transferFrom(
             sender,
             recepient,
