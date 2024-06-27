@@ -45,8 +45,37 @@ contract TestSender is Test{
         assertLt(userBalance, 10000 ether);
         assertGt(recipientBalance, 0 ether);
 
+        // nonce++;
+        // bytes32 hashedMessage2 = senderContract.getHash(userAddress, 10 ether, recipientAddress, address(tokenContract),nonce);
+        // bytes32 messageHashSigned2 = MessageHashUtils.toEthSignedMessageHash(hashedMessage2);
+        // (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(
+        //     privKeyOfUserAddress,
+        //     messageHashSigned2
+        // );
 
+        // bytes memory signedSignature2 = abi.encodePacked(r1, s1, v1);
+        // vm.prank(relayerAddress);
+        // senderContract.transfer(userAddress, 10 ether, recipientAddress, address(tokenContract), nonce,signedSignature2);
+        // userBalance = tokenContract.balanceOf(userAddress);
+        // recipientBalance = tokenContract.balanceOf(recipientAddress);
+        // assertEq(userBalance, 9990 ether);
+        // assertEq(recipientBalance, 10 ether);
 
+    }
+    function testReplay() public {
+        uint nonce = 11;
+        bytes32 hashedMessage = senderContract.getHash(userAddress, 10 ether, recipientAddress, address(tokenContract),nonce);
+        bytes32 messageHashSigned = MessageHashUtils.toEthSignedMessageHash(hashedMessage);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            privKeyOfUserAddress,
+            messageHashSigned
+        );
+
+        bytes memory signedSignature = abi.encodePacked(r, s, v);
+        vm.prank(relayerAddress);
+        senderContract.transfer(userAddress, 10 ether, recipientAddress, address(tokenContract), nonce,signedSignature);
+        vm.expectRevert("Already executed!");
+        senderContract.transfer(userAddress, 10 ether, recipientAddress, address(tokenContract), nonce,signedSignature);
     }
         
 }

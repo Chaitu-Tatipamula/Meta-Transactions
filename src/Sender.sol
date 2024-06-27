@@ -40,6 +40,8 @@ contract TokenSender{
     )public {
         bytes32 messageHash = getHash(sender,amount,recepient,tokenContract,nonce);
         bytes32 signedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
+        require(!executed[signedMessageHash], "Already executed!");
+
         address signer = signedMessageHash.recover(signature);
         require(signer == sender, "Sender should sign");
         executed[signedMessageHash] = true;
